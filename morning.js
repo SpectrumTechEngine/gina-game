@@ -1,6 +1,7 @@
 // The Morning After: Gina's late for set. A fake-3D road racer (same trick as Culchie Rally),
 // city -> country -> unit base, racing the clock and running over actors on purpose.
 import { ART, bake, ginaRear, carSide, lg, rg, ell, rr, txt, glow } from './morning-art.js';
+import { prepareCard, shareCard } from './share-card.js';
 
 const $ = id => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.floor(Math.random() * a.length)];
@@ -570,6 +571,14 @@ function showResult(dead) {
   }
   if (!__cheated && P.hits > save.bestHits) { save.bestHits = P.hits; note += 'Most actors ever!'; }
   save.plays++; persist();
+  const lm = Math.round(late);
+  prepareCard({
+    mode: 'morning', look: LOOK, big: dead ? 'NEVER' : fmtClock(P.arrive) + ' AM',
+    sub: dead ? 'WRITTEN OFF ON THE WAY TO SET' : late <= 0 ? `${Math.max(0, -lm) ? -lm + ' MIN EARLY' : 'BANG ON TIME'} · CALL TIME 6:30` : `${Math.max(1, lm)} MIN LATE · CALL TIME 6:30`,
+    stats: [[P.hits, 'ACTORS HIT'], [P.bags, 'BAGS'], [P.wine, 'WINE']], line: title,
+    stamp: dead ? 'CUT!' : late <= 0 ? 'MADE IT' : 'LATE', stampCol: dead || late > 0 ? '#ff3b55' : '#ffc56b',
+    text: dead ? `Gina never made it to set (ran over ${P.hits} actors trying). Beat that!` : `Gina got to set at ${fmtClock(P.arrive)}${late > 0 ? ` (${Math.max(1, lm)} min late)` : ' (on time!)'} and ran over ${P.hits} actors. Beat that!`,
+  });
   $('rBest').textContent = note || (save.best !== null ? `Best arrival: ${fmtClock(CALL + save.best)} · Most actors: ${save.bestHits}` : '');
   $('result').hidden = false;
 }
@@ -629,11 +638,8 @@ $('restartBtn').onclick = () => { setPause(false); startRun(); };
 $('hornBtn').onclick = () => { SFX.horn(); if (P && state === 'play') for (const t of things) if (t.k === 'actor' && !t.gone && t.z - (P.z + PLAYERZ) < 5000 && t.z > P.z) t.x += (t.x > P.x ? -.3 : .3); };
 $('muteBtn').onclick = () => setMuted(!night.muted);
 $('againBtn').onclick = () => { ac(); startRun(); };
-$('bragBtn').onclick = () => {
-  const late = Math.round((P.arrive - CALL) / 60), when = P.arrive ? fmtClock(P.arrive) : 'never';
-  const s = `Gina's Morning After: arrived ${when}${P.arrive ? (late > 0 ? ` (${late} min late)` : ' (on time!)') : ''} and ran over ${P.hits} actors. Beat that: ${location.origin}${location.pathname}`;
-  (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(() => toast('Copied. Paste it in the group chat.'), () => toast('Couldn\'t copy, sorry.'));
-};
+$('bragBtn').onclick = () => shareCard(toast);
+if (DEV) window.__share = prepareCard;
 const KEYMAP = { ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R', ArrowUp: 'G', KeyW: 'G', Space: 'G', ArrowDown: 'B', KeyS: 'B' };
 addEventListener('keydown', e => {
   if (state === 'intro' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape')) { endIntro(); e.preventDefault(); return; }

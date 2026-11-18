@@ -223,7 +223,7 @@ h1 .alt{display:block;color:var(--mint);font-size:.62em;letter-spacing:.06em;tex
     <button class="go" id="againBtn">Take two</button>
     <div class="row">
       <button class="ghost" id="looksBtn">Change look</button>
-      <button class="ghost" id="bragBtn">Copy score</button>
+      <button class="ghost" id="bragBtn">📤 Share score</button>
     </div>
   </div>
 </div>
@@ -274,6 +274,7 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {prepareCard,shareCard} from './share-card.js';
 
 const $=id=>document.getElementById(id);
 const rand=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -1014,6 +1015,9 @@ function gameOver(){
   $('overTitle').textContent=pick(DEATH);{const f=$('overFace');f.src=faceSrc(G.look);f.style.objectPosition=G.look==='own'?'50% 6%':'';f.style.transform=G.look==='own'?'scale(2.4) translateY(18%)':'';}
   $('overDist').textContent=m+'m';$('overBags').textContent=G.bags;$('overWine').textContent=G.wine;$('overSlaps').textContent=G.slaps;$('overBest').textContent=save.best+'m';
   $('overWrap').hidden=!isBest;$('overWrap').textContent=isBest?'That\'s a wrap. New best!':'';
+  prepareCard({mode:'night',look:G.look,big:m.toLocaleString('en-IE')+' m',sub:isBest?'NEW BEST RUN!':`BEST: ${save.best.toLocaleString('en-IE')} m`,
+    stats:[[G.bags,'BAGS'],[G.wine,'WINE'],[G.slaps,'SLAPS']],line:$('overTitle').textContent,stamp:isBest?'THAT\'S A WRAP':'CUT!',stampCol:isBest?'#ffc56b':'#ff3b3b',
+    text:`I got Gina ${m}m into her Big Night (${G.bags} bags, ${G.wine} wine, ${G.slaps} actors slapped). Beat that!`});
   const box=$('unlocks');box.innerHTML='';
   const fresh=LOOKS.filter(l=>l.need>before&&l.need<=save.total);
   for(const l of fresh){const d=document.createElement('div');d.className='unlock';d.innerHTML=`<div class="face"><img src="${faceSrc(l.id)}" alt=""></div><p><b>New look unlocked</b><br>${l.name}</p>`;box.appendChild(d);}
@@ -1336,8 +1340,7 @@ $('intro').addEventListener('pointerdown',e=>{if(e.target.closest('button'))retu
 $('resumeBtn').onclick=()=>pause(false);$('quitBtn').onclick=()=>{paused=false;toMenu();};
 $('pauseBtn').onclick=e=>{e.stopPropagation();pause(true);};
 $('muteBtn').onclick=e=>{e.stopPropagation();save.muted=!save.muted;persist();setMuteIcon();if(save.muted){stopRain();engineOff();}else{if(state==='play'){startRain();if(P.car)engineOn();}const m=musicForState();MUS.track=null;if(m)playTrack(m);}};
-$('bragBtn').onclick=()=>{const txt=`I got Gina ${$('overDist').textContent} into her Big Night (${$('overBags').textContent} bags, ${$('overWine').textContent} wine, ${$('overSlaps').textContent} actors slapped). Beat that!`;
-  try{navigator.clipboard.writeText(txt).then(()=>toast('Score copied. Paste it in the group chat!'),()=>toast(txt));}catch(e){toast(txt);}};
+$('bragBtn').onclick=()=>shareCard(toast);
 
 /* input: swipes, taps, keys */
 let sx=0,sy=0,st=0,swiped=false;
