@@ -1327,10 +1327,11 @@ const CODES={
   END1:()=>{CHEAT.start=SCENE_LEN-30;loadScene(1);return 'Start just before Level 1 ends: watch her get the car';},
   END2:()=>{CHEAT.start=SCENE_LEN*2-30;loadScene(1);loadScene(2);return 'Start just before Level 2 ends: watch her park up';},
   END3:()=>{CHEAT.start=SCENE_LEN*3-30;loadScene(2);return 'Start just before Level 3 ends: round two';},
-  CLEAN:()=>{for(const k in CHEAT)CHEAT[k]=k==='start'?0:false;return 'All cheats off';},
+  INVINCIBLE:()=>{save.invincible=!save.invincible;persist();return 'The Morning After: smash through everything: '+(save.invincible?'on':'off');},
+  CLEAN:()=>{for(const k in CHEAT)CHEAT[k]=k==='start'?0:false;save.invincible=false;persist();return 'All cheats off';},
   RESETGINA:()=>{for(const k in CHEAT)CHEAT[k]=k==='start'?0:false;save={best:0,total:0,look:'own',muted:save.muted,introSeen:false};persist();buildMenu();return 'Progress wiped. Back to the start';},
 };
-function showCheats(){const on=Object.entries(CHEAT).filter(([k,v])=>v).map(([k])=>k==='start'?'start at '+CHEAT.start+'m':k);const b=$('cheatBadge');b.hidden=!on.length;b.textContent=on.length?'Cheats on: '+on.join(', ')+" (this run won't count)":'';}
+function showCheats(){const on=Object.entries(CHEAT).filter(([k,v])=>v).map(([k])=>k==='start'?'start at '+CHEAT.start+'m':k);if(save.invincible)on.push('invincible (Morning After)');const b=$('cheatBadge');b.hidden=!on.length;b.textContent=on.length?'Cheats on: '+on.join(', ')+" (this run won't count)":'';}
 $('codesBtn').onclick=()=>{const f=$('codeForm');f.hidden=!f.hidden;if(!f.hidden)$('codeIn').focus();};
 $('codeForm').addEventListener('submit',e=>{e.preventDefault();const c=$('codeIn').value.trim().toUpperCase().replace(/\s+/g,'');const fn=CODES[c];toast(fn?fn():'That code does fuck all');$('codeIn').value='';showCheats();});
 $('playBtn').onclick=start;$('againBtn').onclick=start;$('looksBtn').onclick=toMenu;

@@ -40,6 +40,7 @@ function setMuted(m) {
   $('muteBtn').textContent = m ? '🔇' : '🔊'; if (master) master.gain.value = m ? 0 : 1;
 }
 const LOOK = night.look || 'own';
+const INVINC = !!night.invincible; // code INVINCIBLE on the Big Night menu: smash through everything
 const faceSrc = id => id === 'own' ? 'assets/gina/upper_own.png' : `assets/gina/head_${id}.png`;
 function setFace(el, box, id) { el.src = faceSrc(id); box.classList.toggle('own', id === 'own'); }
 
@@ -455,6 +456,7 @@ function hitActor(t) {
 }
 function lifeCheck() { while (P.picks >= 10) { P.picks -= 10; if (P.hearts < 5) { P.hearts++; pop('+1 ❤', '#ff4fa3'); } } }
 function crash(o, solidThing) {
+  if (INVINC) { o.gone = true; flyAway(o.k, 1, o.x); SFX.thud(); P.shake = .2; return; }
   if (P.inv > 0 || P.tipsy > 0) { if (!solidThing) { o.gone = true; flyAway(o.k, 1, o.x); SFX.thud(); P.shake = .2; } return; }
   P.hearts--; P.crashes++; P.v = (P.v + Math.min(P.v, MAXV * .12)) / 2; P.inv = 2.2; P.shake = .6; P.grim = 1.4; SFX.crash();
   if (!solidThing) { o.gone = true; flyAway(o.k, 1, o.x); }
@@ -507,14 +509,14 @@ function update(dt) {
     for (const o of s.spr) {
       if (!o.t || o.gone || Math.abs(o.x - P.x) > o.c + CARW) continue;
       if (o.t === 'pick') take(o);
-      else if (o.t === 'bump') { o.gone = true; P.v *= .8; P.shake = .3; SFX.bump(); if (Math.random() < .5) say(pick(BUMP)); }
+      else if (o.t === 'bump') { o.gone = true; if (!INVINC) P.v *= .8; P.shake = .3; SFX.bump(); if (Math.random() < .5) say(pick(BUMP)); }
       else crash(o, false);
     }
   }
   for (const t of things) {
     if (t.gone || Math.abs(t.z - pz) > 200 || Math.abs(t.x - P.x) > t.c + CARW) continue;
     if (t.k === 'actor') hitActor(t);
-    else if (t.k === 'sheep' || t.k === 'cow') { if (P.inv > 0 || P.tipsy > 0) { t.gone = true; flyAway(t.k, 1, t.x); SFX.thud(); } else { t.gone = true; flyAway(t.k, 1, t.x); crash(t, true); } }
+    else if (t.k === 'sheep' || t.k === 'cow') { if (P.inv > 0 || P.tipsy > 0 || INVINC) { t.gone = true; flyAway(t.k, 1, t.x); SFX.thud(); } else { t.gone = true; flyAway(t.k, 1, t.x); crash(t, true); } }
     else crash(t, true);
   }
   // the Garda checkpoint
@@ -583,7 +585,7 @@ function showResult(dead) {
   $('result').hidden = false;
 }
 
-let __auto = false, __cheated = false;
+let __auto = false, __cheated = INVINC;
 function autoDrive() {
   keys.G = 1; keys.B = 0; const pz = P.z + PLAYERZ; let target = 0;
   const act = things.filter(t => t.k === 'actor' && !t.gone && t.z > pz && t.z - pz < 6000).sort((a, b) => a.z - b.z)[0];
@@ -605,7 +607,7 @@ function tick(dt) {
   frameTimes.push(dt); if (frameTimes.length > 90) { const avg = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length; frameTimes = []; if (avg > 1 / 38 && !lowQ && DPR > 1) { lowQ = true; resize(); } }
   if (P.slow > 0) { P.slow -= dt; dt *= .3; }
   T += dt;
-  if (state === 'count') { P.count -= dt; const n = Math.ceil(P.count); if (n !== P.cshow) { P.cshow = n; if (n > 0) { banner(String(n), null, .8); SFX.beep(); } else { banner('GO!', 'Call time 6:30', .9); tone(1400, 1400, .3, 'square', .08); state = 'play'; music(true); walkie('Gina, you\'re on the way, yeah? Call time\'s 6:30.', 'I\'m literally parking.'); } } }
+  if (state === 'count') { P.count -= dt; const n = Math.ceil(P.count); if (n !== P.cshow) { P.cshow = n; if (n > 0) { banner(String(n), null, .8); SFX.beep(); } else { banner('GO!', INVINC ? 'Invincible: smash everything' : 'Call time 6:30', .9); tone(1400, 1400, .3, 'square', .08); state = 'play'; music(true); walkie('Gina, you\'re on the way, yeah? Call time\'s 6:30.', 'I\'m literally parking.'); } } }
   update(dt);
   if (state === 'play' || state === 'count') tickTalk(dt);
   if (state === 'finish') { P.fin += dt; if (P.fin > 2.4 && !P.shown) { P.shown = 1; showResult(false); } }
