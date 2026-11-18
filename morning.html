@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>The Morning After</title>
+<meta name="description" content="Gina's slept in. Call time is 6:30. Drive like a lunatic and run over every actor on the way.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gina's Big Night: The Morning After">
+<meta property="og:description" content="Gina's slept in. Call time is 6:30. Drive like a lunatic and run over every actor on the way.">
+<meta property="og:image" content="https://thespectrumtechengine.com/gina-game/share.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;600;800&family=Permanent+Marker&display=swap">
+<style>
+/* Portrait driving game: canvas fills the top ~80%, big clear buttons in the bottom ~20%. Single dark UI (matches the Big Night menu). */
+:root{
+  --night:#140b1c; --neon:#ff4fa3; --mint:#8ff0d2; --amber:#ffc56b; --ink:#fff6ee; --dim:#c9b8c8; --red:#ff3b55;
+  --panel:rgba(20,10,30,.66);
+  --display:"Bungee","Impact","Arial Black",system-ui,sans-serif;
+  --body:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important;}
+html,body{height:100%;margin:0;}
+body{background:#0b0610;color:var(--ink);font-family:var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}
+button{font-family:var(--body);cursor:pointer;}
+button:focus-visible{outline:3px solid var(--mint);outline-offset:2px;}
+#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:min(100vw,560px);display:flex;flex-direction:column;background:var(--night);}
+#stage{position:relative;flex:1 1 auto;overflow:hidden;}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;}
+
+/* HUD */
+.hud{position:absolute;inset:0;pointer-events:none;padding-top:env(safe-area-inset-top,0px);}
+#face{position:absolute;left:10px;top:calc(10px + env(safe-area-inset-top,0px));width:62px;height:62px;border-radius:50%;border:3px solid var(--neon);overflow:hidden;background:#2a1a33;box-shadow:0 3px 12px #0008;}
+#face img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;transform:scale(1.45);}
+#face.own img{object-position:50% 6%;transform:scale(1.9) translateY(12%);}
+#face.bump{animation:bump .35s ease-out;}
+@keyframes bump{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+.chips{position:absolute;left:10px;top:calc(82px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:5px;}
+.chip{background:var(--panel);border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:3px 10px;font:800 14px var(--body);min-width:40px;font-variant-numeric:tabular-nums;}
+#hearts{color:var(--neon);font-size:17px;letter-spacing:1px;text-shadow:0 1px 4px #000;}
+.clock{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));background:var(--panel);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:5px 16px 6px;text-align:center;min-width:112px;}
+.clock b{display:block;font:400 30px/1 var(--display);color:#ff5277;font-variant-numeric:tabular-nums;}
+.clock span{font:800 11px var(--body);letter-spacing:.06em;color:#ffd3de;}
+.clock.late b{animation:blink .6s steps(1) infinite;}
+@keyframes blink{50%{color:#fff}}
+.speedo{position:absolute;right:10px;top:calc(10px + env(safe-area-inset-top,0px));width:74px;height:62px;background:var(--panel);border:1px solid rgba(255,255,255,.16);border-radius:14px;}
+.speedo svg{position:absolute;inset:0;}
+.speedo b{position:absolute;left:0;right:0;top:20px;text-align:center;font:400 18px var(--display);}
+.speedo span{position:absolute;left:0;right:0;top:42px;text-align:center;font:800 9px var(--body);color:#bfe;}
+#walkie{position:absolute;left:84px;right:10px;top:calc(80px + env(safe-area-inset-top,0px));background:rgba(255,255,255,.96);color:#1e1426;border-radius:16px;padding:7px 12px;font:700 14px/1.3 var(--body);box-shadow:0 4px 14px #0007;transform-origin:0 50%;}
+#walkie i{font-style:normal;display:block;color:#c2186b;margin-top:3px;}
+#walkie.in{animation:pop .25s cubic-bezier(.2,1.5,.4,1) both;}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+#say{position:absolute;left:50%;bottom:34%;transform:translateX(-50%);max-width:86%;background:var(--neon);color:#2a0b22;border-radius:16px;padding:7px 14px;font:800 16px/1.25 var(--body);text-align:center;box-shadow:0 4px 14px #0007;}
+#say.in{animation:pop .2s cubic-bezier(.2,1.5,.4,1) both;}
+#banner{position:absolute;left:0;right:0;top:38%;text-align:center;font:400 clamp(28px,9vw,46px)/1.05 var(--display);color:#fff;text-shadow:0 0 8px #fff,0 0 24px var(--neon),0 4px 14px #000;}
+#banner small{display:block;font:800 16px var(--body);color:var(--mint);text-shadow:0 1px 6px #000;letter-spacing:.04em;margin-top:6px;}
+#banner.in{animation:pop .3s cubic-bezier(.2,1.5,.4,1) both;}
+
+/* controls: bottom ~20% */
+#pad{flex:0 0 auto;height:clamp(118px,20vh,170px);position:relative;background:linear-gradient(#21132c,#0d0612);border-top:1px solid rgba(255,79,163,.25);
+  padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:1fr 1fr auto 1fr 1.15fr;gap:8px;align-items:center;padding-left:10px;padding-right:10px;touch-action:none;}
+.pb{border:0;color:var(--ink);touch-action:none;}
+.arrow{height:76%;border-radius:20px;background:linear-gradient(#3a2c48,#251a30);border:1.5px solid rgba(255,79,163,.45);font-size:30px;color:#ff7ab5;box-shadow:inset 0 -5px 0 #0007,0 4px 10px #0006;}
+.minis{display:flex;flex-direction:column;gap:6px;}
+.mini{width:40px;height:28px;border-radius:10px;background:#2d2238;border:1px solid #4a3a5a;font-size:13px;color:#dcc;display:grid;place-items:center;padding:0;}
+.round{aspect-ratio:1;max-height:84%;justify-self:center;width:100%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 20px var(--display);box-shadow:inset 0 -6px 0 #0005,inset 0 4px 6px #fff4,0 5px 14px #0008;}
+.round small{font:800 11px var(--body);}
+#brk{background:radial-gradient(circle at 40% 30%,#ff7d8e,#c8213a);color:#fff;font-size:17px;max-height:70%;}
+#gas{background:radial-gradient(circle at 40% 30%,#5bf0b6,#1ea877);color:#05261a;}
+.pb.down{filter:brightness(1.35);transform:translateY(3px);}
+.arrow.down{box-shadow:inset 0 -1px 0 #0007,0 0 18px rgba(255,79,163,.6);}
+
+/* overlays */
+.overlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:20px 16px;
+  background:linear-gradient(180deg,rgba(14,6,20,.55),rgba(14,6,20,.92) 70%);overflow-y:auto;}
+.card{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;margin:auto;}
+h1{font-family:var(--display);font-weight:400;margin:0;line-height:.92;font-size:clamp(38px,11vw,58px);
+  text-shadow:0 0 6px #fff,0 0 18px var(--neon),0 0 42px var(--neon);}
+h1 .alt{display:block;color:var(--mint);font-size:.6em;letter-spacing:.05em;text-shadow:0 0 6px #fff,0 0 18px #2fd9a6,0 0 36px #2fd9a6;}
+.lede{margin:0;color:var(--dim);font-size:16px;line-height:1.45;text-shadow:0 1px 6px #000;}
+.lede b{color:var(--ink);}
+.go{font-family:var(--display);font-size:22px;letter-spacing:.04em;color:#2a0b22;background:var(--neon);border:0;border-radius:999px;padding:13px 34px;box-shadow:0 6px 0 #a3226a,0 0 30px rgba(255,79,163,.55);}
+.go:active{transform:translateY(4px);box-shadow:0 2px 0 #a3226a;}
+.ghost{background:rgba(15,10,8,.5);border:2px solid rgba(255,246,238,.4);color:var(--ink);border-radius:999px;padding:9px 18px;font-weight:600;font-size:15px;text-decoration:none;display:inline-block;}
+.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.stat{background:var(--panel);border:1px solid rgba(255,246,238,.14);border-radius:14px;padding:8px 12px;min-width:74px;}
+.stat b{display:block;font:400 21px var(--display);font-variant-numeric:tabular-nums;}
+.stat span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mint);}
+.howto{font-size:13px;color:var(--dim);margin:0;}
+.stamp{font-family:var(--display);color:var(--red);border:5px solid var(--red);border-radius:12px;padding:4px 18px;font-size:clamp(30px,10vw,52px);line-height:1;
+  transform:rotate(-8deg);background:rgba(255,59,85,.08);text-shadow:0 0 18px rgba(255,59,85,.5);animation:stampIn .3s cubic-bezier(.2,1.6,.4,1) both;}
+.stamp.wrap{color:var(--amber);border-color:var(--amber);background:rgba(255,197,107,.08);}
+@keyframes stampIn{0%{transform:rotate(-8deg) scale(3);opacity:0}100%{transform:rotate(-8deg) scale(1);opacity:1}}
+.over-face{width:104px;height:104px;border-radius:50%;overflow:hidden;border:4px solid var(--ink);box-shadow:0 0 0 4px var(--neon);}
+.over-face img{width:100%;height:100%;object-fit:cover;transform:scale(1.45);object-position:50% 45%;}
+.over-face.own img{object-position:50% 6%;transform:scale(1.9) translateY(12%);}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:#2a0b22;padding:8px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:40;white-space:nowrap;}
+
+/* opening */
+#intro{position:fixed;inset:0;z-index:50;background:#000;}
+#introCv{position:absolute;inset:0;width:100%;height:100%;}
+#skipIntro{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));}
+#turn{position:fixed;inset:0;z-index:80;background:var(--night);display:none;align-items:center;justify-content:center;text-align:center;padding:20px;font:800 20px var(--body);}
+@media (orientation:landscape) and (max-height:500px){#turn{display:flex}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv" aria-label="Gina driving her convertible along the road"></canvas>
+    <div class="hud" id="hud" hidden>
+      <div id="face"><img id="faceImg" alt="Gina"></div>
+      <div class="chips">
+        <div class="chip">👜 <span id="hBags">0</span></div>
+        <div class="chip">🍷 <span id="hWine">0</span></div>
+        <div class="chip">🎬 <span id="hHits">0</span></div>
+        <div id="hearts" aria-label="Lives"></div>
+      </div>
+      <div class="clock" id="clock"><b id="hClock">6:06</b><span id="hCall">24 MIN TO CALL</span></div>
+      <div class="speedo"><svg viewBox="0 0 74 62"><path d="M14 50 A26 26 0 1 1 60 50" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="5" stroke-linecap="round"/><path id="hArc" d="M14 50 A26 26 0 1 1 60 50" fill="none" stroke="url(#sg)" stroke-width="5" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/><defs><linearGradient id="sg"><stop offset="0" stop-color="#7dffcf"/><stop offset=".6" stop-color="#ffcf4a"/><stop offset="1" stop-color="#ff4f6a"/></linearGradient></defs></svg><b id="hSpeed">0</b><span>KM/H</span></div>
+      <div id="walkie" hidden></div>
+      <div id="say" hidden></div>
+      <div id="banner" hidden></div>
+    </div>
+
+    <div class="overlay" id="title">
+      <div class="card">
+        <h1>The Morning<span class="alt">After</span></h1>
+        <p class="lede">Gina's slept in. It's <b>6:01</b> and call time is <b>6:30</b>. Floor it through the city and out past the farms to the set. Run over every actor who gets in the way (they deserve it), dodge the bins, the tractors and the sheep, and grab the <b>bags</b>, the <b>wine</b> and a <b>coffee</b>.</p>
+        <button class="go" id="rollBtn">Roll film</button>
+        <div class="stats">
+          <div class="stat"><b id="sBest">–</b><span>Best arrival</span></div>
+          <div class="stat"><b id="sHits">0</b><span>Most actors</span></div>
+        </div>
+        <p class="howto">Hold <b>GO</b>, steer with <b>◀ ▶</b>, <b>B</b> brakes. Keyboard: arrows or WASD, <kbd>H</kbd> horn, <kbd>P</kbd> pause.</p>
+        <a class="ghost" href="./">← Back to the Big Night Out</a>
+        <p class="howto" style="font-size:11px;opacity:.7">Sky photo from Poly Haven (CC0).</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="paused" hidden>
+      <div class="card">
+        <h1 style="font-size:46px">Paused</h1>
+        <button class="go" id="resumeBtn">Carry on</button>
+        <button class="ghost" id="restartBtn">Start again</button>
+        <a class="ghost" href="./">Back to the Big Night Out</a>
+      </div>
+    </div>
+
+    <div class="overlay" id="result" hidden>
+      <div class="card">
+        <div class="over-face" id="rFaceBox"><img id="rFace" alt="Gina"></div>
+        <div class="stamp" id="rStamp">CUT!</div>
+        <h1 id="rTitle" style="font-size:clamp(26px,7.5vw,40px)">Made it.</h1>
+        <p class="lede" id="rSub"></p>
+        <div class="stats">
+          <div class="stat"><b id="rTime">6:30</b><span>Arrived</span></div>
+          <div class="stat"><b id="rHits">0</b><span>Actors</span></div>
+          <div class="stat"><b id="rBags">0</b><span>Bags</span></div>
+          <div class="stat"><b id="rWine">0</b><span>Wine</span></div>
+        </div>
+        <p class="lede" id="rBest" style="font-size:14px"></p>
+        <button class="go" id="againBtn">Take two</button>
+        <div class="row">
+          <button class="ghost" id="bragBtn">Copy score</button>
+          <a class="ghost" href="./">Big Night Out</a>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <div id="pad" hidden>
+    <button class="pb arrow" id="left" aria-label="Steer left">◀</button>
+    <button class="pb arrow" id="right" aria-label="Steer right">▶</button>
+    <div class="minis">
+      <button class="pb mini" id="pauseBtn" aria-label="Pause">II</button>
+      <button class="pb mini" id="hornBtn" aria-label="Horn">📯</button>
+      <button class="pb mini" id="muteBtn" aria-label="Sound on or off">🔊</button>
+    </div>
+    <button class="pb round" id="brk" aria-label="Brake">B<small>brake</small></button>
+    <button class="pb round" id="gas" aria-label="Go">GO<small>hold</small></button>
+  </div>
+</div>
+
+<div id="intro" hidden>
+  <canvas id="introCv"></canvas>
+  <button class="ghost" id="skipIntro">Skip</button>
+</div>
+<div id="turn">Turn your phone upright 📱</div>
+
+<script type="module" src="morning.js"></script>
+</body>
+</html>
